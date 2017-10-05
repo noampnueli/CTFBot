@@ -1,3 +1,5 @@
+from os import path
+
 
 class Challenge(object):
     def __init__(self, flag: str, name: str, description='', difficulty=0, reward=0):
@@ -59,14 +61,16 @@ class Event(object):
         else:
             raise TypeError("Type is not a Challenge")
 
-    def load_challenges(self, path: str):
+    def load_challenges(self, p: str):
         """
         Load challenges from file
         File format:
         <Flag>|<Name>|<Description>|<Difficulty>|<Reward>\n
-        :param path: path to file
+        :param p: path to file
         """
-        with open(path, 'r') as file:
+        if not path.exists(p):
+            return
+        with open(p, 'r') as file:
             # Clean old challenges
             self.challenges = []
 
