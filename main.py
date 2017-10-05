@@ -25,20 +25,20 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.content.startswith('!ctf'):
-        # Make sure no one sees the flag!
-        await bot.delete_message(message)
-
-        # Answer format: <challenge name>:<flag>
+    if message.author.bot:
+        return
+    if message.channel.is_private:
+        # Answer format: <challenge name>:<flag>#<server ID>
         try:
-            challenge_name, flag = message.content[4:].replace(' ', '').split(':')
+            answer, server_id = message.content.split('#')
+            challenge_name, flag = answer.replace(' ', '').split(':')
         except ValueError as e:
             print(e)
             await bot.send_message(message.channel,
                                    '{} Please send your answer in the following format: '
-                                   '<challenge name>:<flag>'.format(message.author.mention))
+                                   '<challenge name>:<flag>#SERVER_ID'.format(message.author.mention))
         else:
-            event = bot.events[message.channel.server.id]
+            event = bot.events[server_id]
             challenge = event.check_answer(flag, challenge_name)
             # Correct answer
             if challenge:
@@ -57,4 +57,6 @@ async def on_message(message):
     elif message.content == '!reload':
         if message.author.server.owner.top_role in message.author.roles:
             await bot.load_modules()
+            await bot.update_challenge_board()
+            await bot.update_score_board()
 bot.run(token)

@@ -36,24 +36,25 @@ class Scoreboard(object):
 
 
 class Event(object):
-    def __init__(self, challenges=None):
+    def __init__(self, server_id, challenges=None):
         if challenges:
             self.challenges = challenges
         else:
             self.challenges = []
         self.scoreboard = Scoreboard()
         self.solves = {}
+        self.server_id = server_id
 
     def add_points(self, member, challenge: Challenge) -> bool:
-        if member in self.solves and challenge in self.solves[member]:
+        if member.id in self.solves and challenge.name + self.server_id in self.solves[member.id]:
             return False
         self.scoreboard.add_score(member, challenge.reward)
-
+        print(challenge.name + self.server_id)
         # Add challenge to solved challenges
-        if member not in self.solves:
-            self.solves[member] = [challenge]
+        if member.id not in self.solves:
+            self.solves[member.id] = [challenge.name + self.server_id]
         else:
-            self.solves[member].append(challenge)
+            self.solves[member.id].append(challenge.name + self.server_id)
         return True
 
     def add_challenge(self, challenge: Challenge):

@@ -40,7 +40,7 @@ class Bot(discord.Client):
         self.save_events()
 
     def __create_event(self, server: discord.Server):
-        event = Event()
+        event = Event(server.id)
 
         challenge_p = path.join(challenges_dir, server.id)
         if path.exists(challenge_p):
@@ -68,7 +68,8 @@ class Bot(discord.Client):
                         print(e)
 
                     embed = discord.Embed(title='How to Submit a Flag',
-                                          description='!ctf <challenge name>:<flag>',
+                                          description='Send me a private message in this format:\n'
+                                                      '<challenge name>:<flag>#{}'.format(server.id),
                                           color=0x3296d5)
                     await self.send_message(channel, embed=embed)
 
