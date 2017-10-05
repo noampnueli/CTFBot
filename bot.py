@@ -79,6 +79,8 @@ class Bot(discord.Client):
                                         value=':triangular_flag_on_post:' * challenge.difficulty, inline=True)
                         embed.add_field(name='Reward',
                                         value='{} points'.format(challenge.reward), inline=True)
+                        embed.add_field(name='Category',
+                                        value=challenge.category, inline=True)
                         await self.send_message(channel, embed=embed)
 
     async def update_score_board(self):

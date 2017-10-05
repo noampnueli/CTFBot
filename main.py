@@ -54,4 +54,7 @@ async def on_message(message):
             else:
                 await bot.send_message(message.channel,
                                        '{} Incorrect flag :('.format(message.author.mention))
+    elif message.content == '!reload':
+        if message.author.server.owner.top_role in message.author.roles:
+            await bot.load_modules()
 bot.run(token)

@@ -2,12 +2,13 @@ from os import path
 
 
 class Challenge(object):
-    def __init__(self, flag: str, name: str, description='', difficulty=0, reward=0):
+    def __init__(self, flag: str, name: str, category: str, description='', difficulty=0, reward=0):
         self.flag = flag
         self.description = description
         self.difficulty = difficulty
         self.name = name
         self.reward = reward
+        self.category = category
 
     def __str__(self):
         return self.name
@@ -65,7 +66,7 @@ class Event(object):
         """
         Load challenges from file
         File format:
-        <Flag>|<Name>|<Description>|<Difficulty>|<Reward>\n
+        <Flag>|<Name>|<Category>|<Description>|<Difficulty>|<Reward>\n
         :param p: path to file
         """
         if not path.exists(p):
@@ -81,7 +82,7 @@ class Event(object):
             for challenge in challenges:
                 tmp = challenge.split('|')
                 try:
-                    self.challenges.append(Challenge(tmp[0], tmp[1], tmp[2], int(tmp[3]), int(tmp[4])))
+                    self.challenges.append(Challenge(tmp[0], tmp[1], tmp[2], tmp[3], int(tmp[4]), int(tmp[5])))
                 except IndexError as e:
                     print('Invalid format: {}'.format(e))
 
