@@ -66,6 +66,11 @@ class Bot(discord.Client):
                     except discord.HTTPException as e:
                         print(e)
 
+                    embed = discord.Embed(title='How to Submit a Flag',
+                                          description='!ctf <challenge name>:<flag>',
+                                          color=0x3296d5)
+                    await self.send_message(channel, embed=embed)
+
                     for challenge in self.events[server.id].challenges:
                         embed = discord.Embed(title=challenge.name, description=challenge.description,
                                               color=0x3296d5)
