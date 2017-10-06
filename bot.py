@@ -1,5 +1,5 @@
 import discord
-from challenge import Event
+from challenge import Event, Challenge
 
 from os import path, listdir
 
@@ -98,3 +98,17 @@ class Bot(discord.Client):
                                           description=self.events[server.id].scoreboard.get_board(),
                                           color=0x38bc35)
                     await self.send_message(channel, embed=embed)
+
+    async def update_answer_feed(self, server_id: str, challenge: Challenge, member: discord.User):
+        server = None
+        for s in self.servers:
+            if s.id == server_id:
+                server = s
+        if not server:
+            return
+        for channel in server.channels:
+            if challenge.name.lower() == 'feed':
+                await self.send_message(channel,
+                                        '{} Just solved **{}**! :crown:'
+                                        .format(member.name, challenge.name))
+                break

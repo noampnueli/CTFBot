@@ -48,6 +48,7 @@ async def on_message(message):
                                                                                    challenge.reward))
                     bot.save_events()
                     await bot.update_score_board()
+                    await bot.update_answer_feed(server_id, challenge, message.author)
                 else:
                     await bot.send_message(message.channel,
                                            '{} You already solved this challenge!'.format(message.author.mention))
