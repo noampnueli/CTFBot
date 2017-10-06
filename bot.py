@@ -107,7 +107,7 @@ class Bot(discord.Client):
         if not server:
             return
         for channel in server.channels:
-            if challenge.name.lower() == 'feed':
+            if channel.name.lower() == 'feed':
                 await self.send_message(channel,
                                         '{} Just solved **{}**! :crown:'
                                         .format(member.name, challenge.name))

@@ -49,7 +49,7 @@ class Event(object):
         if member.id in self.solves and challenge.name + self.server_id in self.solves[member.id]:
             return False
         self.scoreboard.add_score(member, challenge.reward)
-        print(challenge.name + self.server_id)
+
         # Add challenge to solved challenges
         if member.id not in self.solves:
             self.solves[member.id] = [challenge.name + self.server_id]
