@@ -31,7 +31,7 @@ class Scoreboard(object):
     def get_board(self) -> str:
         tmp = ''
         for member in sorted(self.participants, key=self.participants.get, reverse=True):
-            tmp += '{}:  {}\n'.format(member.name, self.participants[member])
+            tmp += '{}:  {}\n'.format(member.display_name, self.participants[member])
         return tmp
 
 
