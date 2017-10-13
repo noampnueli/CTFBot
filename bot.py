@@ -32,6 +32,10 @@ class Bot(discord.Client):
                 for member in server.members:
                     if not member.bot:
                         self.events[server.id].scoreboard.add_participant(member)
+                # Remove members not in server
+                for member in list(self.events[server.id].scoreboard.participants):
+                    if member not in server.members:
+                        self.events[server.id].scoreboard.participants.pop(member)
                 # Update challenges
                 challenge_p = path.join(challenges_dir, server.id)
                 self.events[server.id].load_challenges(challenge_p)
