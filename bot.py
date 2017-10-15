@@ -10,6 +10,15 @@ challenges_dir = path.join(path.dirname(path.abspath(__file__)), 'challenges')
 
 
 class Bot(discord.Client):
+    """
+
+    Attributes:
+    ----------
+    events: dict
+        Key is server id
+        Value is `Event` god-object
+
+    """
     def __init__(self, **options):
         super().__init__(**options)
 
@@ -43,7 +52,15 @@ class Bot(discord.Client):
         # Update events
         self.save_events()
 
-    def __create_event(self, server: discord.Server):
+    def __create_event(self, server: discord.Server) -> None:
+        """
+        Internal method to load a single event object
+
+        Parameters:
+        ----------
+        server: `discord.Server`:
+            Server to load the object for
+        """
         event = Event(server.id)
 
         challenge_p = path.join(challenges_dir, server.id)
@@ -55,46 +72,58 @@ class Bot(discord.Client):
 
         self.events[server.id] = event
 
-    def save_events(self):
+    def save_events(self) -> None:
+        """
+        Serializes event objects and saves them on the disk
+        :return:
+        """
         for server_id in self.events:
             file = open(path.join(event_dir, server_id + '.pkl'), 'wb')
             pickle.dump(self.events[server_id], file, protocol=pickle.HIGHEST_PROTOCOL)
             file.close()
 
-    async def update_challenge_board(self):
+    async def update_challenge_board(self) -> None:
+        """
+        Removes the previous list of challenges in every server the bot is in and creates a new one
+        :return:
+        """
         for server in self.servers:
             for channel in server.channels:
                 if channel.name.lower() == 'challenges':
                     # Clean old feed
                     try:
-                        await self.purge_from(channel, limit=100)
+                        await self.purge_from(channel)
                     except discord.HTTPException as e:
                         print(e)
 
-                    embed = discord.Embed(title='How to Submit a Flag',
-                                          description='Send me a private message in this format:\n'
-                                                      '<challenge name>:<flag>#{}'.format(server.id),
-                                          color=0x3296d5)
-                    await self.send_message(channel, embed=embed)
+                    flag_submission = discord.Embed(title='How to Submit a Flag',
+                                                    description='Send me a private message in this format:\n'
+                                                                '<challenge name>:<flag>#{}'.format(server.id),
+                                                    color=0x3296d5)
+                    await self.send_message(channel, embed=flag_submission)
 
                     for challenge in self.events[server.id].challenges:
-                        embed = discord.Embed(title=challenge.name, description=challenge.description,
-                                              color=0x3296d5)
-                        embed.add_field(name='Difficulty',
-                                        value=':triangular_flag_on_post:' * challenge.difficulty, inline=True)
-                        embed.add_field(name='Reward',
-                                        value='{} points'.format(challenge.reward), inline=True)
-                        embed.add_field(name='Category',
-                                        value=challenge.category, inline=True)
-                        await self.send_message(channel, embed=embed)
+                        challenge_embed = discord.Embed(title=challenge.name, description=challenge.description,
+                                                        color=0x3296d5)
+                        challenge_embed.add_field(name='Difficulty',
+                                                  value=':triangular_flag_on_post:' * challenge.difficulty, inline=True)
+                        challenge_embed.add_field(name='Reward',
+                                                  value='{} points'.format(challenge.reward), inline=True)
+                        challenge_embed.add_field(name='Category',
+                                                  value=challenge.category, inline=True)
+                        await self.send_message(channel, embed=challenge_embed)
 
-    async def update_score_board(self):
+    async def update_score_board(self) -> None:
+        """
+        Updates the scoreboard of all servers the bot is in by deleting the previous one and sending a new one
+        """
+
         for server in self.servers:
             for channel in server.channels:
                 if channel.name.lower() == 'scoreboard':
                     # Clean old feed
                     try:
-                        await self.purge_from(channel, limit=100)
+                        await self.purge_from(channel)
                     except discord.HTTPException as e:
                         print(e)
 
@@ -103,7 +132,19 @@ class Bot(discord.Client):
                                           color=0x38bc35)
                     await self.send_message(channel, embed=embed)
 
-    async def update_answer_feed(self, server_id: str, challenge: Challenge, member: discord.User):
+    async def update_answer_feed(self, server_id: str, challenge: Challenge, member: discord.User) -> None:
+        """
+        Updates the answer feed of a single server.
+        This method is called whenever a user successfully completes a challenge
+
+
+        Parameters:
+        ----------
+        server_id: str
+            ID of the server to update
+        challenge: `Challenge`
+            The challenge that was completed
+        """
         server = None
         for s in self.servers:
             if s.id == server_id:

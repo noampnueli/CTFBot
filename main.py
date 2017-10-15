@@ -7,12 +7,22 @@ token_path = 'token.txt'
 if len(sys.argv) > 1:
     token_path = sys.argv[1]
 
-token = open(token_path).read().strip('\n')
+with open(token_path) as token_file:
+    token = token_file.read().strip('\n')
+
 bot = Bot()
+bot.run(token)
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
+    """
+    From discord.py documentation:
+    ```
+    Called when the client is done preparing the data received from Discord. Usually after login is successful and the
+    Client.servers and co. are filled up.
+    ```
+    """
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
@@ -24,13 +34,22 @@ async def on_ready():
 
 
 @bot.event
-async def on_member_join(member: discord.Member):
+async def on_member_join(member: discord.Member) -> None:
+    """
+    Called when someone has joined the server(New blood)
+    """
     event = bot.events[member.server.id]
     event.scoreboard.add_participant(member)
 
 
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
+    """
+    Called whenever a message was sent in one of the servers the bot is in
+    If the message was a PM this method checks if it was a flag submission and it verifiers the solution
+    If the message was a global message this method checks if the sender is an admin that requested a reload of the bot
+    """
+
     if message.author.bot:
         return
     if message.channel.is_private:
@@ -60,10 +79,9 @@ async def on_message(message: discord.Message):
                                            '{} You already solved this challenge!'.format(message.author.mention))
             else:
                 await bot.send_message(message.channel,
-                                       '{} Incorrect flag :('.format(message.author.mention))
+                                       '{} Incorrect flag or there is no such challenge :('.format(message.author.mention))
     elif message.content == '!reload':
         if message.author.server.owner.top_role in message.author.roles:
             await bot.load_modules()
             await bot.update_challenge_board()
             await bot.update_score_board()
-bot.run(token)
