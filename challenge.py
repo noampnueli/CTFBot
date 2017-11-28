@@ -1,5 +1,3 @@
-from os import path
-
 
 class Challenge(object):
     """
@@ -78,15 +76,16 @@ class Scoreboard(object):
         """
         Returns a string representation of the scoreboard sorted from the highest score to the lowest
         """
+
         scoreboard = ''
         for member in sorted(self.participants, key=self.participants.get, reverse=True):
-            scoreboard += '{}:  {}\n'.format(member.display_name, self.participants[member])
+            if not member.bot:
+                scoreboard += '{}:  {}\n'.format(member.display_name, self.participants[member])
         return scoreboard
 
 
 class Event(object):
     """
-
     This class is basically a god-object
 
     Attributes:
@@ -159,8 +158,7 @@ class Event(object):
         <Flag>|<Name>|<Category>|<Description>|<Difficulty>|<Reward>\n
         :param p: path to file
         """
-        if not path.exists(p):
-            return
+
         with open(p, 'r') as file:
             # Clean old challenges
             self.challenges = []
