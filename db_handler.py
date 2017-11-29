@@ -1,32 +1,56 @@
 from os import path, mkdir
 import sqlite3
-from typing import List, Dict
+from typing import List, Dict, Iterable
 
 solved_table_name = 'solved_challenges'
 database_directory = path.join(path.dirname(path.abspath(__file__)), 'database')
 
 
 class Database(object):
+    """
+    Class representing the bots` database connection
+    Contains methods required
+
+    Attributes:
+    -----------
+    database_path: str
+       The absolute path to the database file
+    """
 
     def __init__(self, database_file='ctfbot.db'):
-        self.database_file = database_file
+        """
+        Constructor for the `Database` class
+        Creates the folder that contains the DB file if it does not exist
+        """
+
+        self.database_path = path.join(database_directory, database_file)
 
         if not path.exists(database_directory):
             mkdir(database_directory)
 
     def __enter__(self):
-        self.connection = sqlite3.connect(path.join(database_directory, self.database_file))
+        """
+        Magic method that is called when entering the body of a with statement.
+        Creates the database connection object and cursor object.
+        """
+
+        self.connection = sqlite3.connect(path.join(database_directory, self.database_path))
         self.cursor = self.connection.cursor()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_traceback):
+        """
+        Magic method that is called when exiting the body of a with statement.
+        Destroys the DB connection object.
+        """
+
         self.connection.close()
 
     def check_create_tables(self) -> None:
         """
-        This method checks if the tables required for the bot exist in the database.
-        It creates them if they are not found
+        Checks if the tables required for the bot exist in the database. If not, create them.
         """
+
         self.cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='{}'".format(solved_table_name))
 
@@ -47,7 +71,6 @@ class Database(object):
         ----------
         events: dict[str, Event]:
             The events dictionary to write data to
-
         """
 
         for server_id in events:
@@ -69,6 +92,7 @@ class Database(object):
     def save_solved_challenges(self, user_solves: Dict[str, List[str]], server_id: str) -> None:
         """
         Updates the database of solved challenges
+        The query used does not allow for duplicate entries in the database
 
         Parameters:
         ----------
@@ -81,8 +105,27 @@ class Database(object):
 
         for member_id, solved_challenges in user_solves.items():
             for challenge in solved_challenges:
-                print("Inserting(or ignoring) solved challenges {0} to table".format(challenge))
                 self.cursor.execute("INSERT OR IGNORE INTO {} (user, server_id, challenge_name) VALUES ('{}','{}', '{}')".format(solved_table_name, member_id, server_id, challenge))
 
-        print("Updated row count: {0}".format(self.cursor.rowcount))
+        self.connection.commit()
+
+    def remove_redundancies(self, members, challenges) -> None:
+        """
+        Removes from the database entries of solved challenges by users no longer in the server
+        Removes from the database entries of solved challenges no longer defined in the server
+
+        Parameters:
+        ----------
+        members: Iterable[discord.Member]
+            Iterable of members in the server whose records should remain in the DB
+        challenges: Iterable[Challenge]
+            Iterable of challenges that should remain in the DB
+        """
+
+        user_list = ", ".join(map(lambda user: repr(user.id), members))
+        challenge_list = ", ".join(map(lambda challenge: repr(challenge), challenges))
+
+        self.cursor.execute("DELETE FROM {} WHERE user NOT IN ({})".format(solved_table_name, user_list))
+        self.cursor.execute("DELETE FROM {} WHERE challenge_name NOT IN ({})".format(solved_table_name, challenge_list))
+
         self.connection.commit()

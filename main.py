@@ -26,9 +26,10 @@ async def on_ready() -> None:
     print(bot.user.id)
     print('------')
 
-    await bot.load_modules()
-    await bot.update_challenge_board()
-    await bot.update_score_board()
+    for server in bot.servers:
+        await bot.load_modules(server)
+        await bot.update_challenge_board(server.id)
+        await bot.update_score_board(server.id)
 
 
 @bot.event
@@ -73,9 +74,8 @@ async def on_message(message: discord.Message) -> None:
                     await bot.send_message(message.channel,
                                            '{} Correct! Here are {} points'.format(message.author.mention,
                                                                                    challenge.reward))
-                    print("Solved challenge name: {}, server_id: {}", challenge.name, server_id)
                     bot.save_events()
-                    await bot.update_score_board()
+                    await bot.update_score_board(server_id)
                     await bot.update_answer_feed(server_id, challenge, message.author)
                 else:
                     await bot.send_message(message.channel,
@@ -84,11 +84,11 @@ async def on_message(message: discord.Message) -> None:
                 await bot.send_message(message.channel,
                                        '{} Incorrect flag or there is no such challenge :('.format(
                                            message.author.mention))
-    elif message.content == '!reload':  # TODO: reload only for one specific server
+    elif message.content == '!reload':
         if message.author.server.owner.top_role in message.author.roles:
-            await bot.load_modules()
-            await bot.update_challenge_board()
-            await bot.update_score_board()
-
+            bot.save_events()
+            await bot.load_modules(message.server)
+            await bot.update_challenge_board(message.server.id)
+            await bot.update_score_board(message.server.id)
 
 bot.run(token)
