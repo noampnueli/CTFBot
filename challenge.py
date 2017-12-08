@@ -1,5 +1,3 @@
-from os import path
-
 
 class Challenge(object):
     """
@@ -20,6 +18,7 @@ class Challenge(object):
     reward: int
         Number of points awarded for completing the challenge
     """
+
     def __init__(self, flag: str, name: str, category: str, description='', difficulty=0, reward=0):
         self.flag = flag
         self.description = description
@@ -43,6 +42,7 @@ class Scoreboard(object):
         The key is of type `discord.Member`.
         The value is the members' score.
     """
+
     def __init__(self, participants=None):
         if participants:
             self.participants = participants
@@ -58,6 +58,7 @@ class Scoreboard(object):
         member: `discord.Member`
             Member to add to the internal list
         """
+
         if member not in self.participants:
             self.participants[member] = 0
 
@@ -72,41 +73,45 @@ class Scoreboard(object):
         score: int
             How many points should be added to the score
         """
+
         self.participants[member] += score
 
     def get_board(self) -> str:
         """
         Returns a string representation of the scoreboard sorted from the highest score to the lowest
         """
+
         scoreboard = ''
         for member in sorted(self.participants, key=self.participants.get, reverse=True):
-            scoreboard += '{}:  {}\n'.format(member.display_name, self.participants[member])
+            if not member.bot:
+                scoreboard += '{}:  {}\n'.format(member.display_name, self.participants[member])
         return scoreboard
 
 
 class Event(object):
     """
-
-    This class is basically a god-object
+    This class is basically a god-object.
+    Each `Event` represents a different server.
 
     Attributes:
     ----------
-    challenges: list
-        Internal list of challenges
+    challenges: dict[str, Challenge]
+        Dictionary of challenges.
+        Key is challenge name
+        Value is Challenge object
     scoreboard: `Scoreboard`
         The scoreboard object of the server
     solves: dict
         Dictionary of challenges solved by a server member
         Key is member id
-        Value is list of solved challenges in all server. Each list item is of the form <Challenge Name><Server Id>
+        Value is list of solved challenges.
     server_id: str
         The server id
     """
-    def __init__(self, server_id: str, challenges=None):
-        if challenges:
-            self.challenges = challenges
-        else:
-            self.challenges = []
+
+    def __init__(self, server_id: str):
+
+        self.challenges = {}
         self.scoreboard = Scoreboard()
         self.solves = {}
         self.server_id = server_id
@@ -125,32 +130,17 @@ class Event(object):
             Challenge to check
 
         """
-        if member.id in self.solves and challenge.name + self.server_id in self.solves[member.id]:
+
+        if member.id in self.solves and challenge.name in self.solves[member.id]:
             return False
         self.scoreboard.add_score(member, challenge.reward)
 
         # Add challenge to solved challenges
         if member.id not in self.solves:
-            self.solves[member.id] = [challenge.name + self.server_id]
+            self.solves[member.id] = [challenge.name]
         else:
-            self.solves[member.id].append(challenge.name + self.server_id)
+            self.solves[member.id].append(challenge.name)
         return True
-
-    def add_challenge(self, challenge: Challenge) -> None:
-        """
-        Adds a challenge to the internal list of challenges if and only if the challenge is an instance of `Challenge`
-
-        This function is not actually called anywhere...
-
-        Parameters:
-        ----------
-        challenge: `Challenge`
-            The challenge to add
-        """
-        if isinstance(challenge, Challenge):
-            self.challenges.append(challenge)
-        else:
-            raise TypeError("Type is not a Challenge")
 
     def load_challenges(self, p: str) -> None:
         """
@@ -159,11 +149,10 @@ class Event(object):
         <Flag>|<Name>|<Category>|<Description>|<Difficulty>|<Reward>\n
         :param p: path to file
         """
-        if not path.exists(p):
-            return
+
         with open(p, 'r') as file:
             # Clean old challenges
-            self.challenges = []
+            self.challenges = {}
 
             data = file.read()
 
@@ -172,7 +161,7 @@ class Event(object):
             for challenge in challenges:
                 tmp = challenge.split('|')
                 try:
-                    self.challenges.append(Challenge(tmp[0], tmp[1], tmp[2], tmp[3], int(tmp[4]), int(tmp[5])))
+                    self.challenges[tmp[1]] = Challenge(tmp[0], tmp[1], tmp[2], tmp[3], int(tmp[4]), int(tmp[5]))
                 except IndexError as e:
                     print('Invalid format: {}'.format(e))
 
@@ -188,8 +177,9 @@ class Event(object):
         challenge_name: str
             The challenge the answer was given to. Challenge names are case-insensitive
         """
+
         for challenge in self.challenges:
-            if str(challenge).replace(' ', '').lower() == challenge_name.lower():
-                if flag == challenge.flag:
-                    return challenge
+            if challenge.replace(' ', '').lower() == challenge_name.lower():
+                if flag == self.challenges[challenge].flag:
+                    return self.challenges[challenge]
         return None

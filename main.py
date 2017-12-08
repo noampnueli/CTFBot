@@ -1,6 +1,5 @@
 import discord
 from bot import Bot
-
 import sys
 
 token_path = 'token.txt'
@@ -11,7 +10,6 @@ with open(token_path) as token_file:
     token = token_file.read().strip('\n')
 
 bot = Bot()
-bot.run(token)
 
 
 @bot.event
@@ -28,9 +26,10 @@ async def on_ready() -> None:
     print(bot.user.id)
     print('------')
 
-    await bot.load_modules()
-    await bot.update_challenge_board()
-    await bot.update_score_board()
+    for server in bot.servers:
+        await bot.load_modules(server)
+        await bot.update_challenge_board(server.id)
+        await bot.update_score_board(server.id)
 
 
 @bot.event
@@ -49,7 +48,6 @@ async def on_message(message: discord.Message) -> None:
     If the message was a PM this method checks if it was a flag submission and it verifiers the solution
     If the message was a global message this method checks if the sender is an admin that requested a reload of the bot
     """
-
     if message.author.bot:
         return
     if message.channel.is_private:
@@ -63,6 +61,11 @@ async def on_message(message: discord.Message) -> None:
                                    '{} Please send your answer in the following format: '
                                    '<challenge name>:<flag>#SERVER_ID'.format(message.author.mention))
         else:
+
+            if server_id not in bot.events:
+                await bot.send_message(message.channel, "{} This bot is not in the server with the ID {}".format(message.author.mention, server_id))
+                return
+
             event = bot.events[server_id]
             challenge = event.check_answer(flag, challenge_name)
             # Correct answer
@@ -72,16 +75,20 @@ async def on_message(message: discord.Message) -> None:
                                            '{} Correct! Here are {} points'.format(message.author.mention,
                                                                                    challenge.reward))
                     bot.save_events()
-                    await bot.update_score_board()
+                    await bot.update_score_board(server_id)
                     await bot.update_answer_feed(server_id, challenge, message.author)
                 else:
                     await bot.send_message(message.channel,
                                            '{} You already solved this challenge!'.format(message.author.mention))
             else:
                 await bot.send_message(message.channel,
-                                       '{} Incorrect flag or there is no such challenge :('.format(message.author.mention))
+                                       '{} Incorrect flag or there is no such challenge :('.format(
+                                           message.author.mention))
     elif message.content == '!reload':
         if message.author.server.owner.top_role in message.author.roles:
-            await bot.load_modules()
-            await bot.update_challenge_board()
-            await bot.update_score_board()
+            bot.save_events()
+            await bot.load_modules(message.server)
+            await bot.update_challenge_board(message.server.id)
+            await bot.update_score_board(message.server.id)
+
+bot.run(token)
