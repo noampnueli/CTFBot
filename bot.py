@@ -39,8 +39,8 @@ class Bot(discord.Client):
 
         with Database() as db:
             db.check_create_tables()
-            db.remove_redundancies(server.members, self.events[server.id].challenges)  # TODO: Check this actually works
-            db.load_solved(self.events)
+            db.remove_redundancies(server.members, self.events[server.id].challenges)
+            db.load_solved(self.events, server.id)
 
         self.compute_scores_servers()
 

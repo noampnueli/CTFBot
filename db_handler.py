@@ -63,9 +63,9 @@ class Database(object):
             UNIQUE(user, server_id, challenge_name) );
             """.format(solved_table_name))
 
-    def load_solved(self, events) -> None:
+    def load_solved(self, events, server_id: str) -> None:
         """
-        Writes to `events` all challenges solved across all servers
+        Writes to `events` all challenges solved in `server`
 
         Parameters:
         ----------
@@ -73,21 +73,19 @@ class Database(object):
             The events dictionary to write data to
         """
 
-        for server_id in events:
+        # Select all challenges solved in the server `server_id`
+        self.cursor.execute("SELECT user, challenge_name FROM {} WHERE server_id='{}'".format(solved_table_name, server_id))
 
-            # Select all challenges solved in the server `server_id`
-            self.cursor.execute("SELECT user, challenge_name FROM {} WHERE server_id='{}'".format(solved_table_name, server_id))
+        for solved_challenge in self.cursor.fetchall():
+            user_id = solved_challenge[0]
+            challenge_name = solved_challenge[1]
 
-            for solved_challenge in self.cursor.fetchall():
-                user_id = solved_challenge[0]
-                challenge_name = solved_challenge[1]
-
-                # If there is no entry for challenges solved by `user_id`, create one with `challenge_name`
-                # Otherwise, append `challenge_name` to the list
-                if user_id not in events[server_id].solves:
-                    events[server_id].solves[user_id] = [challenge_name]
-                else:
-                    events[server_id].solves[user_id].append(challenge_name)
+            # If there is no entry for challenges solved by `user_id`, create one with `challenge_name`
+            # Otherwise, append `challenge_name` to the list
+            if user_id not in events[server_id].solves:
+                events[server_id].solves[user_id] = [challenge_name]
+            else:
+                events[server_id].solves[user_id].append(challenge_name)
 
     def save_solved_challenges(self, user_solves: Dict[str, List[str]], server_id: str) -> None:
         """
