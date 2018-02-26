@@ -83,7 +83,7 @@ class Scoreboard(object):
 
         scoreboard = ''
         for member in sorted(self.participants, key=self.participants.get, reverse=True):
-            if not member.bot:
+            if not member.bot and self.participants[member] > 0:
                 scoreboard += '{}:  {}\n'.format(member.display_name, self.participants[member])
         return scoreboard
 
